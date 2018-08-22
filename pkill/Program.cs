@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.ConstrainedExecution;
 using System.Runtime.InteropServices;
 using Shell32;
+using SHDocVw;
 using static pkill.NativeMethods;
 
 // ReSharper disable InconsistentNaming
@@ -99,14 +100,20 @@ namespace pkill
             // explorer also manages the Task Bar, we don't want to actually kill the process, just
             // close the windows.
             var shell = new Shell();
-            Shell shellApplication = shell.Application;
+            var shellApplication = (Shell) shell.Application;
+            var windows = new List<InternetExplorer>();
 
-            foreach (var window in shellApplication.Windows())
+            foreach (InternetExplorer window in shellApplication.Windows())
                 if (window.Name == "File Explorer")
+                    windows.Add(window);
+
+            while (windows.Any())
+                for (var i = 0; i < windows.Count; i++)
                 {
-                    long hwnd = window.HWND;
-                    window.Quit();
+                    long hwnd = windows[i].HWND;
+                    windows[i].Quit();
                     Console.Out.WriteLine($"Closed File Explorer window (HWND: {hwnd}).");
+                    windows.RemoveAt(i);
                 }
         }
 
